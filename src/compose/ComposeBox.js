@@ -27,7 +27,7 @@ import type {
 } from '../types';
 import { connect } from '../react-redux';
 import { withGetText } from '../boot/TranslationProvider';
-import { addToOutbox, draftUpdate, sendTypingStart, sendTypingStop } from '../actions';
+import { draftUpdate, sendTypingStart, sendTypingStop } from '../actions';
 import * as api from '../api';
 import { FloatingActionButton, Input } from '../common';
 import { showErrorAlert, showToast } from '../utils/info';
@@ -80,6 +80,8 @@ type Props = $ReadOnly<{|
   narrow: Narrow,
   editMessage: EditMessage | null,
   completeEditMessage: () => void,
+
+  onSend: (string, Narrow) => void,
 
   /** The contents of the message that the ComposeBox should contain when it's first rendered */
   initialMessage?: string,
@@ -390,16 +392,11 @@ class ComposeBox extends PureComponent<Props, State> {
   };
 
   handleSend = () => {
-    const { dispatch, caughtUp, _ } = this.props;
+    const { dispatch } = this.props;
     const { message } = this.state;
     const narrow = this.getDestinationNarrow();
 
-    if (!caughtUp.newer) {
-      showErrorAlert(_('Failed to send message'));
-      return;
-    }
-
-    dispatch(addToOutbox(narrow, message));
+    this.props.onSend(message, narrow);
 
     this.setMessageInputValue('');
 
