@@ -14,7 +14,6 @@ import { ThemeContext } from '../styles';
 import type {
   Auth,
   Narrow,
-  EditMessage,
   InputSelection,
   UserOrBot,
   Dispatch,
@@ -69,7 +68,7 @@ type Props = $ReadOnly<{|
   insets: EdgeInsets,
 
   narrow: Narrow,
-  editMessage: EditMessage | null,
+  isEditing: boolean,
 
   onSend: (string, Narrow) => void,
 
@@ -189,8 +188,8 @@ class ComposeBox extends PureComponent<Props, State> {
   };
 
   getCanSelectTopic = () => {
-    const { editMessage, narrow } = this.props;
-    if (editMessage) {
+    const { isEditing, narrow } = this.props;
+    if (isEditing) {
       return isStreamOrTopicNarrow(narrow);
     }
     if (!isStreamNarrow(narrow)) {
@@ -451,7 +450,7 @@ class ComposeBox extends PureComponent<Props, State> {
       ownUserId,
       narrow,
       allUsersById,
-      editMessage,
+      isEditing,
       insets,
       isAdmin,
       isAnnouncementOnly,
@@ -541,7 +540,7 @@ class ComposeBox extends PureComponent<Props, State> {
           <FloatingActionButton
             accessibilityLabel="Send message"
             style={this.styles.composeSendButton}
-            Icon={editMessage === null ? IconSend : IconDone}
+            Icon={isEditing ? IconDone : IconSend}
             size={32}
             disabled={message.trim().length === 0 || this.state.numUploading > 0}
             onPress={this.handleSend}
