@@ -28,12 +28,10 @@ import type {
 import { connect } from '../react-redux';
 import { withGetText } from '../boot/TranslationProvider';
 import { draftUpdate, sendTypingStart, sendTypingStop } from '../actions';
-import * as api from '../api';
 import { FloatingActionButton, Input } from '../common';
-import { showErrorAlert, showToast } from '../utils/info';
+import { showToast } from '../utils/info';
 import { IconDone, IconSend } from '../common/Icons';
 import {
-  caseNarrowDefault,
   isStreamNarrow,
   isStreamOrTopicNarrow,
   isTopicNarrow,
@@ -61,6 +59,7 @@ import {
 import TopicAutocomplete from '../autocomplete/TopicAutocomplete';
 import AutocompleteView from '../autocomplete/AutocompleteView';
 import { getAllUsersById, getOwnUserId } from '../users/userSelectors';
+import * as api from '../api';
 
 type SelectorProps = {|
   auth: Auth,
@@ -80,7 +79,6 @@ type Props = $ReadOnly<{|
 
   narrow: Narrow,
   editMessage: EditMessage | null,
-  completeEditMessage: () => void,
 
   onSend: (string, Narrow) => void,
 
@@ -408,31 +406,6 @@ class ComposeBox extends PureComponent<Props, State> {
     dispatch(sendTypingStop(narrow));
   };
 
-  handleEdit = () => {
-    const { auth, editMessage, completeEditMessage, _ } = this.props;
-    if (!editMessage) {
-      throw new Error('expected editMessage');
-    }
-    const { message } = this.state;
-    const content = editMessage.content !== message ? message : undefined;
-    const subject = caseNarrowDefault(
-      this.getDestinationNarrow(),
-      { topic: (stream, topic) => (topic !== editMessage.topic ? topic : undefined) },
-      () => undefined,
-    );
-
-    if ((content !== undefined && content !== '') || (subject !== undefined && subject !== '')) {
-      api.updateMessage(auth, { content, subject }, editMessage.id).catch(error => {
-        showErrorAlert(_('Failed to edit message'), error.message);
-      });
-    }
-    completeEditMessage();
-    if (this.messageInputRef.current !== null) {
-      // `.current` is not type-checked; see definition.
-      this.messageInputRef.current.blur();
-    }
-  };
-
   UNSAFE_componentWillReceiveProps(nextProps: Props) {
     if (nextProps.editMessage !== this.props.editMessage) {
       const topic = nextProps.editMessage
@@ -592,7 +565,7 @@ class ComposeBox extends PureComponent<Props, State> {
             Icon={editMessage === null ? IconSend : IconDone}
             size={32}
             disabled={message.trim().length === 0 || this.state.numUploading > 0}
-            onPress={editMessage === null ? this.handleSend : this.handleEdit}
+            onPress={this.handleSend}
           />
         </View>
       </View>
