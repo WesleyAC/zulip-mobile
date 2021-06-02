@@ -18,7 +18,6 @@ import type {
   InputSelection,
   UserOrBot,
   Dispatch,
-  CaughtUp,
   GetText,
   Subscription,
   Stream,
@@ -37,6 +36,7 @@ import {
   isTopicNarrow,
   streamNameOfNarrow,
   topicNarrow,
+  topicOfNarrow,
 } from '../utils/narrow';
 import ComposeMenu from './ComposeMenu';
 import getComposeInputPlaceholder from './getComposeInputPlaceholder';
@@ -44,14 +44,7 @@ import NotSubscribed from '../message/NotSubscribed';
 import AnnouncementOnly from '../message/AnnouncementOnly';
 import MentionWarnings from './MentionWarnings';
 
-import {
-  getAuth,
-  getIsAdmin,
-  getLastMessageTopic,
-  getCaughtUpForNarrow,
-  getStreamInNarrow,
-  getVideoChatProvider,
-} from '../selectors';
+import { getAuth, getIsAdmin, getStreamInNarrow, getVideoChatProvider } from '../selectors';
 import {
   getIsActiveStreamSubscribed,
   getIsActiveStreamAnnouncementOnly,
@@ -68,8 +61,6 @@ type SelectorProps = {|
   isAdmin: boolean,
   isAnnouncementOnly: boolean,
   isSubscribed: boolean,
-  lastMessageTopic: string,
-  caughtUp: CaughtUp,
   videoChatProvider: VideoChatProvider | null,
   stream: Subscription | {| ...Stream, in_home_view: boolean |},
 |};
@@ -174,7 +165,12 @@ class ComposeBox extends PureComponent<Props, State> {
     isFocused: false,
     isMenuExpanded: false,
     height: 20,
-    topic: this.props.initialTopic != null ? this.props.initialTopic : this.props.lastMessageTopic,
+    topic:
+      this.props.initialTopic !== undefined
+        ? this.props.initialTopic
+        : isTopicNarrow(this.props.narrow)
+        ? topicOfNarrow(this.props.narrow)
+        : '',
     message: this.props.initialMessage || '',
     selection: { start: 0, end: 0 },
     numUploading: 0,
@@ -339,13 +335,11 @@ class ComposeBox extends PureComponent<Props, State> {
   };
 
   handleMessageFocus = () => {
-    this.setState((state, { lastMessageTopic }) => ({
-      ...state,
-      topic: state.topic || lastMessageTopic,
+    this.setState({
       isMessageFocused: true,
       isFocused: true,
       isMenuExpanded: false,
-    }));
+    });
   };
 
   handleMessageBlur = () => {
@@ -410,7 +404,9 @@ class ComposeBox extends PureComponent<Props, State> {
     if (nextProps.editMessage !== this.props.editMessage) {
       const topic = nextProps.editMessage
         ? nextProps.editMessage.topic
-        : nextProps.lastMessageTopic;
+        : isTopicNarrow(nextProps.narrow)
+        ? topicOfNarrow(nextProps.narrow)
+        : '';
       const message = nextProps.editMessage ? nextProps.editMessage.content : '';
       this.setMessageInputValue(message);
       this.setTopicInputValue(topic);
@@ -581,8 +577,6 @@ export default compose(
     isAdmin: getIsAdmin(state),
     isAnnouncementOnly: getIsActiveStreamAnnouncementOnly(state, props.narrow),
     isSubscribed: getIsActiveStreamSubscribed(state, props.narrow),
-    lastMessageTopic: getLastMessageTopic(state, props.narrow),
-    caughtUp: getCaughtUpForNarrow(state, props.narrow),
     stream: getStreamInNarrow(state, props.narrow),
     videoChatProvider: getVideoChatProvider(state),
   })),
