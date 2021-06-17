@@ -96,7 +96,6 @@ type State = {|
    * and back. */
   isFocused: boolean,
 
-  isMenuExpanded: boolean,
   topic: string,
   message: string,
   height: number,
@@ -150,7 +149,6 @@ class ComposeBox extends PureComponent<Props, State> {
     isMessageFocused: false,
     isTopicFocused: false,
     isFocused: false,
-    isMenuExpanded: false,
     height: 20,
     topic: this.props.lastMessageTopic,
     message: this.props.draft,
@@ -217,12 +215,6 @@ class ComposeBox extends PureComponent<Props, State> {
     }
   };
 
-  handleComposeMenuToggle = () => {
-    this.setState(({ isMenuExpanded }) => ({
-      isMenuExpanded: !isMenuExpanded,
-    }));
-  };
-
   handleLayoutChange = (event: LayoutEvent) => {
     this.setState({
       height: event.nativeEvent.layout.height,
@@ -230,7 +222,7 @@ class ComposeBox extends PureComponent<Props, State> {
   };
 
   handleTopicChange = (topic: string) => {
-    this.setState({ topic, isMenuExpanded: false });
+    this.setState({ topic });
   };
 
   handleTopicAutocomplete = (topic: string) => {
@@ -238,7 +230,7 @@ class ComposeBox extends PureComponent<Props, State> {
   };
 
   handleMessageChange = (message: string) => {
-    this.setState({ message, isMenuExpanded: false });
+    this.setState({ message });
     const { dispatch, narrow } = this.props;
     dispatch(sendTypingStart(narrow));
     dispatch(draftUpdate(narrow, message));
@@ -273,15 +265,11 @@ class ComposeBox extends PureComponent<Props, State> {
       topic: state.topic || lastMessageTopic,
       isMessageFocused: true,
       isFocused: true,
-      isMenuExpanded: false,
     }));
   };
 
   handleMessageBlur = () => {
-    this.setState({
-      isMessageFocused: false,
-      isMenuExpanded: false,
-    });
+    this.setState({ isMessageFocused: false });
     // give a chance to the topic input to get the focus
     clearTimeout(this.inputBlurTimeoutId);
     this.inputBlurTimeoutId = setTimeout(this.updateIsFocused, 200);
@@ -291,22 +279,16 @@ class ComposeBox extends PureComponent<Props, State> {
     this.setState({
       isTopicFocused: true,
       isFocused: true,
-      isMenuExpanded: false,
     });
   };
 
   handleTopicBlur = () => {
     this.setState({
       isTopicFocused: false,
-      isMenuExpanded: false,
     });
     // give a chance to the message input to get the focus
     clearTimeout(this.inputBlurTimeoutId);
     this.inputBlurTimeoutId = setTimeout(this.updateIsFocused, 200);
-  };
-
-  handleInputTouchStart = () => {
-    this.setState({ isMenuExpanded: false });
   };
 
   getDestinationNarrow = (): Narrow => {
@@ -420,7 +402,7 @@ class ComposeBox extends PureComponent<Props, State> {
   };
 
   render() {
-    const { isTopicFocused, isMenuExpanded, height, message, topic, selection } = this.state;
+    const { isTopicFocused, height, message, topic, selection } = this.state;
     const {
       ownUserId,
       narrow,
@@ -473,9 +455,7 @@ class ComposeBox extends PureComponent<Props, State> {
         <View style={[this.styles.composeBox, style]} onLayout={this.handleLayoutChange}>
           <ComposeMenu
             destinationNarrow={this.getDestinationNarrow()}
-            expanded={isMenuExpanded}
             insertVideoCallLink={insertVideoCallLink}
-            onExpandContract={this.handleComposeMenuToggle}
           />
           <View style={this.styles.composeText}>
             {this.getCanSelectTopic() && (
@@ -489,11 +469,10 @@ class ComposeBox extends PureComponent<Props, State> {
                 onChangeText={this.handleTopicChange}
                 onFocus={this.handleTopicFocus}
                 onBlur={this.handleTopicBlur}
-                onTouchStart={this.handleInputTouchStart}
               />
             )}
             <Input
-              multiline={!isMenuExpanded}
+              multiline
               style={[
                 this.styles.composeTextInput,
                 { backgroundColor: this.context.backgroundColor },
@@ -506,7 +485,6 @@ class ComposeBox extends PureComponent<Props, State> {
               onChangeText={this.handleMessageChange}
               onFocus={this.handleMessageFocus}
               onSelectionChange={this.handleMessageSelectionChange}
-              onTouchStart={this.handleInputTouchStart}
             />
           </View>
           <FloatingActionButton

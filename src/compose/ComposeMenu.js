@@ -1,29 +1,21 @@
 /* @flow strict-local */
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Platform, View } from 'react-native';
 import type { DocumentPickerResponse } from 'react-native-document-picker';
 import ImagePicker from 'react-native-image-picker';
+// $FlowFixMe[untyped-import]
+import Menu, { MenuItem } from 'react-native-material-menu';
 
 import type { Narrow } from '../types';
 import { useDispatch } from '../react-redux';
 import { showErrorAlert } from '../utils/info';
 import { BRAND_COLOR, createStyleSheet } from '../styles';
-import {
-  IconPlusCircle,
-  IconLeft,
-  IconImage,
-  IconCamera,
-  IconFile,
-  IconVideo,
-} from '../common/Icons';
-import AnimatedComponent from '../animation/AnimatedComponent';
+import { IconPlusCircle, IconImage, IconCamera, IconFile, IconVideo } from '../common/Icons';
 import { uploadFile } from '../actions';
 
 type Props = $ReadOnly<{|
-  expanded: boolean,
   destinationNarrow: Narrow,
   insertVideoCallLink: (() => void) | null,
-  onExpandContract: () => void,
 |}>;
 
 /**
@@ -60,6 +52,12 @@ export const chooseUploadImageFilename = (uri: string, fileName: ?string): strin
 export default function ComposeMenu(props: Props) {
   const { destinationNarrow } = props;
   const dispatch = useDispatch();
+
+  const [menuRef: undefined | React$Ref<Menu>, setMenuRef] = useState(undefined);
+
+  const showMenu = () => {
+    menuRef?.show();
+  };
 
   const uploadFileCallback = useCallback(
     (uri: string, fileName: ?string) => {
@@ -159,32 +157,36 @@ export default function ComposeMenu(props: Props) {
     },
   });
 
-  const { expanded, insertVideoCallLink, onExpandContract } = props;
-  const numIcons = 2 + (Platform.OS === 'android' ? 1 : 0) + (insertVideoCallLink !== null ? 1 : 0);
+  const { insertVideoCallLink } = props;
 
   return (
     <View style={styles.composeMenu}>
-      <AnimatedComponent
-        stylePropertyName="width"
-        fullValue={40 * numIcons}
-        useNativeDriver={false}
-        visible={expanded}
+      <Menu
+        ref={setMenuRef}
+        button={<IconPlusCircle style={styles.expandButton} size={24} onPress={showMenu} />}
+        animationDuration={100}
       >
-        <View style={styles.composeMenu}>
-          {Platform.OS === 'android' && (
-            <IconFile style={styles.composeMenuButton} size={24} onPress={handleFilePicker} />
-          )}
-          <IconImage style={styles.composeMenuButton} size={24} onPress={handleImagePicker} />
-          <IconCamera style={styles.composeMenuButton} size={24} onPress={handleCameraCapture} />
-          {insertVideoCallLink !== null ? (
-            <IconVideo style={styles.composeMenuButton} size={24} onPress={insertVideoCallLink} />
-          ) : null}
-        </View>
-      </AnimatedComponent>
-      {!expanded && (
-        <IconPlusCircle style={styles.expandButton} size={24} onPress={onExpandContract} />
-      )}
-      {expanded && <IconLeft style={styles.expandButton} size={24} onPress={onExpandContract} />}
+        {Platform.OS === 'android' && (
+          <MenuItem onPress={handleFilePicker}>
+            <IconFile />
+            Upload File
+          </MenuItem>
+        )}
+        <MenuItem onPress={handleImagePicker}>
+          <IconImage />
+          Upload File
+        </MenuItem>
+        <MenuItem onPress={handleCameraCapture}>
+          <IconCamera />
+          Take Photo
+        </MenuItem>
+        {insertVideoCallLink !== null ? (
+          <MenuItem onPress={insertVideoCallLink}>
+            <IconVideo />
+            Add Video Call
+          </MenuItem>
+        ) : null}
+      </Menu>
     </View>
   );
 }
