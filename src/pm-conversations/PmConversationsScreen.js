@@ -61,7 +61,7 @@ export default function PmConversationsScreen(props: Props) {
           secondary
           Icon={IconPeople}
           style={styles.button}
-          text="Group PM"
+          text="New group PM"
           onPress={() => {
             setTimeout(() => NavigationService.dispatch(navigateToCreateGroup()));
           }}
